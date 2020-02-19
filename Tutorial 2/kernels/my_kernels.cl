@@ -10,7 +10,48 @@ kernel void filter_r(global const uchar* A, global uchar* B) {
 	int colour_channel = id / image_size; // 0 - red, 1 - green, 2 - blue
 
 	//this is just a copy operation, modify to filter out the individual colour channels
-	B[id] = A[id];
+	if (colour_channel == 0)
+	{
+		B[id] = A[id];
+	}
+	else
+	{
+		B[id] = 0;
+	}
+}
+
+kernel void invert(global const uchar* A, global uchar* B) {
+	int id = get_global_id(0);
+	B[id] = 255 - A[id];
+}
+
+kernel void rgb2grey(global const uchar* A, global uchar* B) {
+	int id = get_global_id(0);
+	int image_size = get_global_size(0) / 3; //each image consists of 3 colour channels
+	int colour_channel = id / image_size; // 0 - red, 1 - green, 2 - blue
+
+	uchar r, g, b;
+	if (colour_channel == 0)
+	{
+		r = A[id];
+		g = A[id + image_size];
+		b = A[id + (2 * image_size)];
+		B[id] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	}
+	else if (colour_channel == 1)
+	{
+		r = A[id - image_size];
+		g = A[id];
+		b = A[id + image_size];
+		B[id] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	}
+	else
+	{
+		r = A[id - (2 * image_size)];
+		g = A[id - image_size];
+		b = A[id];
+		B[id] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	}
 }
 
 //simple ND identity kernel

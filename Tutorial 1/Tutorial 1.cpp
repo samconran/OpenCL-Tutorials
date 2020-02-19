@@ -90,6 +90,36 @@ int main(int argc, char **argv) {
 		std::cout << "A = " << A << std::endl;
 		std::cout << "B = " << B << std::endl;
 		std::cout << "C = " << C << std::endl;
+
+		//TUTORIAL 2 PART 3: Setup and execute the kernel (i.e. device code)
+		std::vector<int> X = { 0, 2, 7, 2, 6, 9, 9, 7, 3, 1 };
+
+		vector_elements = X.size();//number of elements
+		vector_size = X.size() * sizeof(int);//size in bytes
+
+		std::vector<int> Y(vector_elements);
+
+		//device - buffers
+		cl::Buffer buffer_X(context, CL_MEM_READ_WRITE, vector_size);
+		cl::Buffer buffer_Y(context, CL_MEM_READ_WRITE, vector_size);
+
+		//Part 4 - device operations
+
+		//4.1 Copy arrays A and B to device memory
+		queue.enqueueWriteBuffer(buffer_X, CL_TRUE, 0, vector_size, &X[0]);
+
+		cl::Kernel kernel_avg = cl::Kernel(program, "avg_filter");
+		kernel_avg.setArg(0, buffer_X);
+		kernel_avg.setArg(1, buffer_Y);
+
+		queue.enqueueNDRangeKernel(kernel_avg, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange);
+
+		//Copy the result from device to host
+		queue.enqueueReadBuffer(buffer_Y, CL_TRUE, 0, vector_size, &Y[0]);
+
+		std::cout << "X = " << X << std::endl;
+		std::cout << "Y = " << Y << std::endl;
+
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
